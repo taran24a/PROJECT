@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-labelledby="title">
+  <title>FinanceFlow Favicon</title>
+  <defs>
+    <!-- Violet gradient to match site theme -->
+    <linearGradient id="ff-grad" x1="12" y1="52" x2="52" y2="12" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8B5CF6"/>
+      <stop offset="1" stop-color="#C084FC"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Transparent background (no fill) -->
+  <rect width="64" height="64" fill="none"/>
+
+  <!-- Monogram/mark: trending-up line with subtle top tick -->
+  <g stroke="url(#ff-grad)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Base bar -->
+    <path d="M12 44 H28"/>
+    <!-- Rising trend line -->
+    <path d="M20 44 L34 30 L42 38 L54 24"/>
+    <!-- Subtle top tick -->
+    <path d="M34 22 H48"/>
+  </g>
+</svg>
