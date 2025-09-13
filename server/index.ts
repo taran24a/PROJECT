@@ -6,7 +6,7 @@ import { coachHandler } from "./routes/ai";
 import { connectMongo } from "./db";
 import { signupHandler, loginHandler } from "./routes/auth";
 import { getInvestments, addInvestment, updateInvestment, deleteInvestment, updatePrices, getMarketData, searchStocks, getQuotes } from "./routes/investments";
-import { getExpenses, addExpense, updateExpense, deleteExpense, getExpenseCategories, getExpenseInsights, expensesStream } from "./routes/expenses";
+import { getExpenses, addExpense, updateExpense, deleteExpense, getExpenseCategories, getExpenseInsights, expensesStream, getExpenseForecast, getExpenseAnomalies, importExpenses, bankWebhook, generatePersonalPlan } from "./routes/expenses";
 import { getGoals, addGoal, updateGoal, addContribution, deleteGoal, getGoalInsights } from "./routes/goals";
 import { seedData } from "./routes/seed";
 
@@ -57,6 +57,11 @@ export function createServer() {
   app.delete("/api/expenses/:id", deleteExpense);
   app.get("/api/expenses/categories", getExpenseCategories);
   app.get("/api/expenses/insights", getExpenseInsights);
+  app.get("/api/expenses/forecast", getExpenseForecast);
+  app.get("/api/expenses/anomalies", getExpenseAnomalies);
+  app.post("/api/expenses/import", importExpenses);
+  app.post("/api/expenses/webhook", bankWebhook);
+  app.get("/api/plan/personal", generatePersonalPlan);
   // Real-time expense updates via SSE
   app.get("/api/expenses/stream", expensesStream);
 
