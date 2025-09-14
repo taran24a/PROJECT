@@ -16,6 +16,8 @@ export interface IInvestment extends mongoose.Document {
   exchange?: string;
   purchaseDate: Date;
   lastUpdated: Date;
+  paymentIntentId?: string;
+  status: 'active' | 'sold' | 'refunded' | 'cancelled';
   createdAt: Date;
   updatedAt: Date;
 }
@@ -41,6 +43,12 @@ const InvestmentSchema = new Schema<IInvestment>(
     exchange: { type: String },
     purchaseDate: { type: Date, required: true },
     lastUpdated: { type: Date, default: Date.now },
+    paymentIntentId: { type: String },
+    status: { 
+      type: String, 
+      enum: ['active', 'sold', 'refunded', 'cancelled'], 
+      default: 'active' 
+    },
   },
   { timestamps: true }
 );
