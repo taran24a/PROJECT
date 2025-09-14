@@ -35,6 +35,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import StockSearch from "@/components/investments/StockSearch";
 import PortfolioPerformance from "@/components/investments/PortfolioPerformance";
+import AddInvestmentFlow from "@/components/investments/AddInvestmentFlow";
 import { toast } from "sonner";
 
 interface Investment {
@@ -221,6 +222,7 @@ export default function Investments() {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [addQty, setAddQty] = useState<string>("");
   const [addPrice, setAddPrice] = useState<string>("");
+  const [showAddInvestmentFlow, setShowAddInvestmentFlow] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [editInvestment, setEditInvestment] = useState<Investment | null>(null);
   const [editQty, setEditQty] = useState<string>("");
@@ -395,6 +397,12 @@ export default function Investments() {
     }
   };
 
+  const handleInvestmentSuccess = (investment: any) => {
+    setInvestments(prev => [investment, ...prev]);
+    calculatePortfolioSummary();
+    toast.success(`Successfully added ${investment.symbol} to your portfolio!`);
+  };
+
   const addToWatchlist = (stock: Stock) => {
     const newWatchlistItem: WatchlistItem = {
       ...stock,
@@ -512,7 +520,7 @@ export default function Investments() {
             <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
-          <Button onClick={() => setActiveTab('search')}>
+          <Button onClick={() => setShowAddInvestmentFlow(true)}>
             <Plus className="w-4 h-4 mr-2" />
             Add Investment
           </Button>
@@ -1048,6 +1056,13 @@ export default function Investments() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Add Investment Flow */}
+      <AddInvestmentFlow
+        isOpen={showAddInvestmentFlow}
+        onClose={() => setShowAddInvestmentFlow(false)}
+        onSuccess={handleInvestmentSuccess}
+      />
       </div>
     </div>
   );
