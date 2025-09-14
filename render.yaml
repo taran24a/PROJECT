@@ -19,6 +19,10 @@ services:
         fromSecret: true
       - key: ALPHA_VANTAGE_API_KEY
         fromSecret: true
+      - key: RAZORPAY_KEY_ID
+        fromSecret: true
+      - key: RAZORPAY_KEY_SECRET
+        fromSecret: true
       - key: CORS_ORIGIN
         value: "https://financeflow-n5sl.onrender.com" # Your frontend URL
       # Add other non-sensitive env vars here if needed
