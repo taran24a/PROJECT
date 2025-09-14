@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { PlaidApi, PlaidEnvironments, Configuration, Products, CountryCode } from "plaid";
+import { PlaidApi, PlaidEnvironments, Configuration, Products, CountryCode, LinkTokenCreateRequest } from "plaid";
 import { Investment as InvestmentModel } from "./models/Investment";
 import type { IInvestment } from "./models/Investment";
 import mongoose from "mongoose";
@@ -25,15 +25,15 @@ export const createLinkToken = async (req: Request, res: Response) => {
   try {
     const userId = req.headers['user-id'] || '507f1f77bcf86cd799439011';
 
-    const request = {
+    const request: LinkTokenCreateRequest = {
       user: {
-        client_user_id: userId as string,
+        client_user_id: String(userId),
       },
       client_name: 'FinanceFlow',
       products: [Products.Transactions, Products.Investments, Products.Auth],
       country_codes: [CountryCode.Us],
       language: 'en',
-    } as const;
+    };
 
     const response = await plaidClient.linkTokenCreate(request);
     
