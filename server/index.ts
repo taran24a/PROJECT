@@ -8,7 +8,7 @@ import { signupHandler, loginHandler } from "./routes/auth";
 import { getInvestments, addInvestment, updateInvestment, deleteInvestment, updatePrices, getMarketData, searchStocks, getQuotes } from "./routes/investments";
 import { getExpenses, addExpense, updateExpense, deleteExpense, getExpenseCategories, getExpenseInsights, expensesStream } from "./routes/expenses";
 import { getGoals, addGoal, updateGoal, addContribution, deleteGoal, getGoalInsights } from "./routes/goals";
-import { createPaymentOrder, simulatePaymentSuccess, getPaymentHistory, getPaymentMethods } from "./routes/payments";
+import { createPaymentOrder, simulatePaymentSuccess, getPaymentHistory, getPaymentMethods } from "./payments";
 import { createLinkToken, exchangeToken, getInvestmentAccounts, getTransactions, syncInvestmentsFromPlaid, getAccountBalance } from "./routes/plaid";
 import { seedData } from "./routes/seed";
 
