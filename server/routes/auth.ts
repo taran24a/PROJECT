@@ -5,6 +5,10 @@ import jwt from "jsonwebtoken";
 import { User } from "../models/User";
 import { sendWelcomeEmail } from "../mail";
 
+// In-memory fallback store when no DB is configured
+const memoryUsers = new Map<string, { id: string; email: string; name?: string; passwordHash: string }>();
+const useMemoryStore = !process.env.MONGODB_URI;
+
 const signupSchema = z.object({
   name: z.string().min(1).max(120).optional(),
   email: z.string().email(),
@@ -28,6 +32,17 @@ export const signupHandler: RequestHandler = async (req, res) => {
     if (!parsed.success) return res.status(400).json({ error: "invalid_body", details: parsed.error.flatten() });
     const { email, password, name } = parsed.data;
 
+    // If no DB configured, use in-memory fallback
+    if (useMemoryStore) {
+      if (memoryUsers.has(email)) return res.status(409).json({ error: "email_exists" });
+      const passwordHash = await bcrypt.hash(password, 10);
+      const id = Math.random().toString(36).slice(2);
+      memoryUsers.set(email, { id, email, name, passwordHash });
+      const token = signToken(id);
+      try { await sendWelcomeEmail(email, name || undefined); } catch {}
+      return res.json({ user: { id, email, name }, token });
+    }
+
     const existing = await User.findOne({ email }).lean();
     if (existing) return res.status(409).json({ error: "email_exists" });
 
@@ -35,15 +50,9 @@ export const signupHandler: RequestHandler = async (req, res) => {
     const user = await User.create({ email, passwordHash, name });
     const token = signToken(user.id);
 
-    // Try sending welcome email, but do not fail signup if it errors
-    try {
-      await sendWelcomeEmail(user.email, user.name || undefined);
-    } catch {}
+    try { await sendWelcomeEmail(user.email, user.name || undefined); } catch {}
 
-    return res.json({
-      user: { id: user.id, email: user.email, name: user.name },
-      token,
-    });
+    return res.json({ user: { id: user.id, email: user.email, name: user.name }, token });
   } catch (e: any) {
     return res.status(500).json({ error: "server_error", message: e?.message });
   }
@@ -54,6 +63,15 @@ export const loginHandler: RequestHandler = async (req, res) => {
     const parsed = loginSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: "invalid_body", details: parsed.error.flatten() });
     const { email, password } = parsed.data;
+
+    if (useMemoryStore) {
+      const mem = memoryUsers.get(email);
+      if (!mem) return res.status(401).json({ error: "invalid_credentials" });
+      const ok = await bcrypt.compare(password, mem.passwordHash);
+      if (!ok) return res.status(401).json({ error: "invalid_credentials" });
+      const token = signToken(mem.id);
+      return res.json({ user: { id: mem.id, email: mem.email, name: mem.name }, token });
+    }
 
     const user = await User.findOne({ email });
     if (!user) return res.status(401).json({ error: "invalid_credentials" });
