@@ -9,7 +9,7 @@ import { getInvestments, addInvestment, updateInvestment, deleteInvestment, upda
 import { getExpenses, addExpense, updateExpense, deleteExpense, getExpenseCategories, getExpenseInsights, expensesStream } from "./routes/expenses";
 import { getGoals, addGoal, updateGoal, addContribution, deleteGoal, getGoalInsights } from "./routes/goals";
 import { createPaymentOrder, simulatePaymentSuccess, getPaymentHistory, getPaymentMethods } from "./payments";
-import { createLinkToken, exchangeToken, getInvestmentAccounts, getTransactions, syncInvestmentsFromPlaid, getAccountBalance } from "./routes/plaid";
+import { createLinkToken, exchangeToken, getInvestmentAccounts, getTransactions, syncInvestmentsFromPlaid, getAccountBalance } from "./plaid";
 import { seedData } from "./routes/seed";
 
 export function createServer() {

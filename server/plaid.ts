@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
-import { PlaidApi, PlaidEnvironments, Configuration } from "plaid";
-import { Investment as InvestmentModel } from "../models/Investment";
-import type { IInvestment } from "../models/Investment";
+import { PlaidApi, PlaidEnvironments, Configuration, Products, CountryCode } from "plaid";
+import { Investment as InvestmentModel } from "./models/Investment";
+import type { IInvestment } from "./models/Investment";
 import mongoose from "mongoose";
 
 // Initialize Plaid client
@@ -30,10 +30,10 @@ export const createLinkToken = async (req: Request, res: Response) => {
         client_user_id: userId as string,
       },
       client_name: 'FinanceFlow',
-      products: ['transactions', 'investments', 'accounts'],
-      country_codes: ['US'], // Plaid primarily supports US, but we'll use it for demo
+      products: [Products.Transactions, Products.Investments, Products.Auth],
+      country_codes: [CountryCode.Us],
       language: 'en',
-    };
+    } as const;
 
     const response = await plaidClient.linkTokenCreate(request);
     

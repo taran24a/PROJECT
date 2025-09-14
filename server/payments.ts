@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
-import { Investment as InvestmentModel } from "../models/Investment";
-import type { IInvestment } from "../models/Investment";
+import { Investment as InvestmentModel } from "./models/Investment";
+import type { IInvestment } from "./models/Investment";
 import mongoose from "mongoose";
 
 // Ensure consistent model typing for mongoose operations
