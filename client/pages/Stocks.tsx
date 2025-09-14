@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -12,13 +13,16 @@ import {
   Activity,
   Clock,
   Globe,
-  AlertCircle
+  AlertCircle,
+  Building2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUIStore } from "@/store/ui";
 import { MaskedNumber } from "@/components/dashboard/KpiCard";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from "recharts";
 import { toast } from "sonner";
+import InvestmentPurchase from "@/components/investments/InvestmentPurchase";
+import PlaidLink from "@/components/plaid/PlaidLink";
 
 interface MarketData {
   indices: Array<{
@@ -71,6 +75,11 @@ export default function Stocks() {
   const [searchResults, setSearchResults] = useState<StockSearchResult[]>([]);
   const [activeTab, setActiveTab] = useState<'trending' | 'gainers' | 'losers'>('trending');
   const [watchlist, setWatchlist] = useState<string[]>([]);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [selectedStock, setSelectedStock] = useState<any>(null);
+  const [showInvestmentModal, setShowInvestmentModal] = useState(false);
+  const [showPlaidModal, setShowPlaidModal] = useState(false);
   
   const panic = useUIStore((s) => s.panic);
 
@@ -92,12 +101,10 @@ export default function Stocks() {
 
   useEffect(() => {
     fetchMarketData();
-    // Auto-refresh every 30 seconds during market hours
+    // Auto-refresh every 10 seconds for real-time feel
     const interval = setInterval(() => {
-      if (marketData?.marketStatus.isOpen) {
-        fetchMarketData();
-      }
-    }, 30000);
+      fetchMarketData(true);
+    }, 10000);
     
     return () => clearInterval(interval);
   }, []);
@@ -111,20 +118,34 @@ export default function Stocks() {
     }
   }, [searchQuery]);
 
-  const fetchMarketData = async () => {
+  const fetchMarketData = async (isAutoRefresh = false) => {
     try {
-      setLoading(true);
-      try { useUIStore.getState().setGlobalLoading(true); } catch {}
-      const response = await fetch('/api/market');
+      if (!isAutoRefresh) {
+        setLoading(true);
+        try { useUIStore.getState().setGlobalLoading(true); } catch {}
+      } else {
+        setIsRefreshing(true);
+      }
+      
+      // Add cache-busting parameter to force fresh data
+      const response = await fetch(`/api/market?t=${Date.now()}`);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
       setMarketData(data);
+      setLastUpdated(new Date());
+      console.log('Market data fetched:', data.marketStatus);
     } catch (error) {
       console.error('Error fetching market data:', error);
-      toast.error('Failed to fetch market data');
+      if (!isAutoRefresh) {
+        toast.error('Failed to fetch market data');
+      }
     } finally {
-      setLoading(false);
-      try { useUIStore.getState().setGlobalLoading(false); } catch {}
+      if (!isAutoRefresh) {
+        setLoading(false);
+        try { useUIStore.getState().setGlobalLoading(false); } catch {}
+      } else {
+        setIsRefreshing(false);
+      }
     }
   };
 
@@ -154,6 +175,8 @@ export default function Stocks() {
 
   const refreshData = async () => {
     setRefreshing(true);
+    // Force clear any cached data
+    setMarketData(null);
     await fetchMarketData();
     setRefreshing(false);
     toast.success('Market data refreshed');
@@ -170,6 +193,22 @@ export default function Stocks() {
         ? `${symbol} removed from watchlist` 
         : `${symbol} added to watchlist`
     );
+  };
+
+  const handleInvest = (stock: any) => {
+    setSelectedStock(stock);
+    setShowInvestmentModal(true);
+  };
+
+  const handleInvestmentComplete = (investment: any) => {
+    toast.success(`Successfully invested in ${investment.symbol}!`);
+    setShowInvestmentModal(false);
+    setSelectedStock(null);
+  };
+
+  const handlePlaidSuccess = (data: any) => {
+    toast.success('Bank account connected successfully!');
+    setShowPlaidModal(false);
   };
 
   const getActiveStocks = () => {
@@ -202,9 +241,54 @@ export default function Stocks() {
             <p className="text-muted-foreground">
               Market {marketData?.marketStatus.isOpen ? 'Open' : 'Closed'} • Next session: {marketData?.marketStatus.nextSession}
             </p>
+            {/* Live Data Indicator */}
+         <div className={`flex items-center gap-1 ml-2 px-2 py-1 rounded-full border ${
+           marketData?.marketStatus.isOpen
+             ? 'bg-green-500/20 border-green-500/30'
+             : 'bg-yellow-500/20 border-yellow-500/30'
+         }`}>
+           <div className={`w-1.5 h-1.5 rounded-full ${
+             marketData?.marketStatus.isOpen
+               ? 'bg-green-500 animate-pulse'
+               : 'bg-yellow-500'
+           }`}></div>
+           <span className={`text-xs font-medium ${
+             marketData?.marketStatus.isOpen
+               ? 'text-green-400'
+               : 'text-yellow-400'
+           }`}>
+             {marketData?.marketStatus.isOpen ? 'LIVE DATA' : 'CACHED DATA'}
+           </span>
+           {isRefreshing && (
+             <RefreshCw className="w-3 h-3 text-blue-400 animate-spin ml-1" />
+           )}
+         </div>
+            {/* Last Updated Timestamp */}
+            {lastUpdated && (
+              <div className="text-xs text-muted-foreground ml-2">
+                Updated: {lastUpdated.toLocaleTimeString()}
+              </div>
+            )}
+            {/* Data Source Indicator */}
+            <div className="text-xs text-blue-400 ml-2 font-medium">
+              via Alpha Vantage
+            </div>
+            {/* Debug Info */}
+            <div className="text-xs text-gray-400 ml-2">
+              Debug: {marketData?.marketStatus.isOpen ? 'OPEN' : 'CLOSED'}
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowPlaidModal(true)}
+            className="border-blue-500/30 hover:bg-blue-500/10"
+          >
+            <Building2 className="w-4 h-4 mr-2" />
+            Connect Bank
+          </Button>
           <Button
             variant="outline"
             size="sm"
@@ -352,16 +436,25 @@ export default function Stocks() {
                       {stock.change >= 0 ? '+' : ''}{stock.change.toFixed(2)}%
                     </div>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => toggleWatchlist(stock.symbol)}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <Star 
-                      className={`w-4 h-4 ${watchlist.includes(stock.symbol) ? 'fill-purple-primary text-purple-primary' : 'text-muted-foreground'}`} 
-                    />
-                  </Button>
+                  <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleInvest(stock)}
+                      className="text-xs"
+                    >
+                      Invest
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => toggleWatchlist(stock.symbol)}
+                    >
+                      <Star 
+                        className={`w-4 h-4 ${watchlist.includes(stock.symbol) ? 'fill-purple-primary text-purple-primary' : 'text-muted-foreground'}`} 
+                      />
+                    </Button>
+                  </div>
                 </div>
               </motion.div>
             ))}
@@ -517,6 +610,22 @@ export default function Stocks() {
           </div>
         </div>
       </motion.div>
+
+      {/* Investment Purchase Modal */}
+      {showInvestmentModal && selectedStock && (
+        <InvestmentPurchase
+          stockData={selectedStock}
+          onInvestmentComplete={handleInvestmentComplete}
+        />
+      )}
+
+      {/* Plaid Link Modal */}
+      {showPlaidModal && (
+        <PlaidLink
+          onSuccess={handlePlaidSuccess}
+          onClose={() => setShowPlaidModal(false)}
+        />
+      )}
     </div>
   );
 }
